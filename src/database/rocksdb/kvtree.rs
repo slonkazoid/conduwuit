@@ -1,8 +1,6 @@
 use std::{future::Future, pin::Pin, sync::Arc};
 
-use rust_rocksdb::WriteBatchWithTransaction;
-
-use super::{watchers::Watchers, Engine, KeyValueDatabaseEngine, KvTree};
+use super::{rust_rocksdb::WriteBatchWithTransaction, watchers::Watchers, Engine, KeyValueDatabaseEngine, KvTree};
 use crate::{utils, Result};
 
 pub(crate) struct RocksDbEngineTree<'a> {

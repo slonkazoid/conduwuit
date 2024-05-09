@@ -6,13 +6,13 @@ use std::{
 	sync::Arc,
 };
 
+use conduit::{Config, Result};
 use parking_lot::{Mutex, MutexGuard};
 use rusqlite::{Connection, DatabaseName::Main, OptionalExtension};
 use thread_local::ThreadLocal;
 use tracing::debug;
 
 use super::{watchers::Watchers, KeyValueDatabaseEngine, KvTree};
-use crate::{database::Config, Result};
 
 thread_local! {
 	static READ_CONNECTION: RefCell<Option<&'static Connection>> = const { RefCell::new(None) };
