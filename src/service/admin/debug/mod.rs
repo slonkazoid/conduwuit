@@ -2,8 +2,9 @@ use clap::Subcommand;
 use ruma::{events::room::message::RoomMessageEventContent, EventId, RoomId, ServerName};
 
 use self::debug_commands::{
-	change_log_level, force_device_list_updates, get_auth_chain, get_pdu, get_remote_pdu, get_remote_pdu_list,
-	get_room_state, memory_stats, parse_pdu, ping, resolve_true_destination, sign_json, verify_json,
+	change_log_level, first_pdu_in_room, force_device_list_updates, force_set_room_state_from_server, get_auth_chain,
+	get_pdu, get_remote_pdu, get_remote_pdu_list, get_room_state, latest_pdu_in_room, memory_stats, parse_pdu, ping,
+	resolve_true_destination, sign_json, verify_json,
 };
 use crate::Result;
 
@@ -45,8 +46,8 @@ pub(crate) enum DebugCommand {
 		server: Box<ServerName>,
 	},
 
-	/// Same as `get-remote-pdu` but accepts a codeblock newline delimited list
-	/// of PDUs and a single server to fetch from
+	/// - Same as `get-remote-pdu` but accepts a codeblock newline delimited
+	///   list of PDUs and a single server to fetch from
 	GetRemotePduList {
 		/// Argument for us to attempt to fetch all the events from the
 		/// specified remote server.
@@ -120,6 +121,41 @@ pub(crate) enum DebugCommand {
 
 	/// - Print extended memory usage
 	MemoryStats,
+
+	/// - Prints the very first PDU in the specified room (typically
+	///   m.room.create)
+	FirstPduInRoom {
+		/// The room ID
+		room_id: Box<RoomId>,
+	},
+
+	/// - Prints the latest ("last") PDU in the specified room (typically a
+	///   message)
+	LatestPduInRoom {
+		/// The room ID
+		room_id: Box<RoomId>,
+	},
+
+	/// - Forcefully replaces the room state of our local copy of the specified
+	///   room, with the copy (auth chain and room state events) the specified
+	///   remote server says.
+	///
+	/// A common desire for room deletion is to simply "reset" our copy of the
+	/// room. While this admin command is not a replacement for that, if you
+	/// know you have split/broken room state and you know another server in the
+	/// room that has the best/working room state, this command can let you use
+	/// their room state. Such example is your server saying users are in a
+	/// room, but other servers are saying they're not in the room in question.
+	///
+	/// This command will get the latest PDU in the room we know about, and
+	/// request the room state at that point in time via
+	/// `/_matrix/federation/v1/state/{roomId}`.
+	ForceSetRoomStateFromServer {
+		/// The impacted room ID
+		room_id: Box<RoomId>,
+		/// The server we will use to query the room state for
+		server_name: Box<ServerName>,
+	},
 }
 
 pub(crate) async fn process(command: DebugCommand, body: Vec<&str>) -> Result<RoomMessageEventContent> {
@@ -157,5 +193,15 @@ pub(crate) async fn process(command: DebugCommand, body: Vec<&str>) -> Result<Ro
 			no_cache,
 		} => resolve_true_destination(body, server_name, no_cache).await?,
 		DebugCommand::MemoryStats => memory_stats(),
+		DebugCommand::FirstPduInRoom {
+			room_id,
+		} => first_pdu_in_room(body, room_id).await?,
+		DebugCommand::LatestPduInRoom {
+			room_id,
+		} => latest_pdu_in_room(body, room_id).await?,
+		DebugCommand::ForceSetRoomStateFromServer {
+			room_id,
+			server_name,
+		} => force_set_room_state_from_server(body, server_name, room_id).await?,
 	})
 }
