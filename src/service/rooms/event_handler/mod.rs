@@ -657,7 +657,7 @@ impl Service {
 		Ok(pdu_id)
 	}
 
-	async fn resolve_state(
+	pub(crate) async fn resolve_state(
 		&self, room_id: &RoomId, room_version_id: &RoomVersionId, incoming_state: HashMap<u64, Arc<EventId>>,
 	) -> Result<Arc<HashSet<CompressedStateEvent>>> {
 		debug!("Loading current room state ids");
