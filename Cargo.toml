@@ -174,7 +174,7 @@ optional = true
 
 # optional opentelemetry, performance measurements, flamegraphs, etc for performance measurements and monitoring
 [dependencies.opentelemetry]
-version = "0.21.0"
+version = "0.23.0"
 optional = true
 [dependencies.tracing-flame]
 version = "0.2.0"
