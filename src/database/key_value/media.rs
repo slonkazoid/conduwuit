@@ -75,11 +75,11 @@ impl service::media::Data for KeyValueDatabase {
 		let mut prefix = mxc.as_bytes().to_vec();
 		prefix.push(0xFF);
 
-		let mut keys: Vec<Vec<u8>> = vec![];
-
-		for (key, _) in self.mediaid_file.scan_prefix(prefix) {
-			keys.push(key);
-		}
+		let keys: Vec<Vec<u8>> = self
+			.mediaid_file
+			.scan_prefix(prefix)
+			.map(|(key, _)| key)
+			.collect();
 
 		if keys.is_empty() {
 			return Err(Error::bad_database(
@@ -105,7 +105,7 @@ impl service::media::Data for KeyValueDatabase {
 			.mediaid_file
 			.scan_prefix(prefix)
 			.next()
-			.ok_or(Error::BadRequest(ErrorKind::NotFound, "Media not found"))?;
+			.ok_or_else(|| Error::BadRequest(ErrorKind::NotFound, "Media not found"))?;
 
 		let mut parts = key.rsplit(|&b| b == 0xFF);
 
@@ -134,15 +134,7 @@ impl service::media::Data for KeyValueDatabase {
 
 	/// Gets all the media keys in our database (this includes all the metadata
 	/// associated with it such as width, height, content-type, etc)
-	fn get_all_media_keys(&self) -> Result<Vec<Vec<u8>>> {
-		let mut keys: Vec<Vec<u8>> = vec![];
-
-		for (key, _) in self.mediaid_file.iter() {
-			keys.push(key);
-		}
-
-		Ok(keys)
-	}
+	fn get_all_media_keys(&self) -> Vec<Vec<u8>> { self.mediaid_file.iter().map(|(key, _)| key).collect() }
 
 	fn remove_url_preview(&self, url: &str) -> Result<()> { self.url_previews.remove(url.as_bytes()) }
 
